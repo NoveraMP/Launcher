@@ -1284,3 +1284,62 @@ progress::-moz-progress-bar {
     animation-duration: 3s;
   }
 }
+
+.window-titlebar {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  flex: 0 0 32px;
+  height: 32px;
+  background: #19191c;
+  border-bottom: 1px solid #2b2b31;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.window-drag-region {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  padding: 0 15px;
+  color: #777782;
+  font-size: 10px;
+  letter-spacing: 0.1px;
+}
+.window-titlebar.focused .window-drag-region {
+  color: #a4a4b0;
+}
+.window-title-mark {
+  width: 9px;
+  height: 9px;
+  border: 2px solid #4d83ef;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.window-controls {
+  display: flex;
+}
+.window-controls button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 31px;
+  padding: 0;
+  color: #9a9aa7;
+  border-radius: 0;
+}
+.window-titlebar.focused .window-controls button {
+  color: #c9c9d3;
+}
+.window-controls button:hover:not(:disabled) {
+  background: #323239;
+}
+.window-controls .window-close:hover:not(:disabled) {
+  background: #c74350;
+  color: #fff;
+}
+.window-controls button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

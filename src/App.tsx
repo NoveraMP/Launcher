@@ -38,6 +38,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import * as api from "./api";
+import Titlebar from "./Titlebar";
 import { version as launcherVersion } from "../package.json";
 import {
   defaults,
@@ -633,6 +634,7 @@ export default function App() {
   const available = scoped.filter((s) => s.reachable === true).length;
   return (
     <main className="launcher">
+      <Titlebar onError={notify} />
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">
