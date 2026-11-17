@@ -637,9 +637,12 @@ export default function App() {
       <Titlebar onError={notify} />
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">
-            <span />
-          </span>
+          <img
+            className="brand-mark"
+            src="/brand/icon.png"
+            alt=""
+            draggable={false}
+          />
           <div>
             <h1>NoveraMP</h1>
             <span>Мультиплеер начинается здесь</span>

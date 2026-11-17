@@ -54,7 +54,12 @@ export default function Titlebar({ onError }: Props) {
   return (
     <div className={`window-titlebar ${focused ? "focused" : ""}`}>
       <div className="window-drag-region" data-tauri-drag-region="deep">
-        <span className="window-title-mark" />
+        <img
+          className="window-title-mark"
+          src="/brand/icon.png"
+          alt=""
+          draggable={false}
+        />
         <span>NoveraMP Launcher</span>
       </div>
       <div className="window-controls" data-tauri-drag-region="false">
