@@ -1,0 +1,104 @@
+name: Launcher CI and Release
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CARGO_TERM_COLOR: always
+  APPIMAGE_EXTRACT_AND_RUN: "1"
+
+jobs:
+  check:
+    name: Check frontend and launcher core
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: cargo fmt --all -- --check
+      - run: cargo test --locked -p launcher-core
+
+  desktop:
+    name: Build ${{ matrix.os }}
+    needs: check
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            bundles: appimage,deb
+            artifact: launcher-linux-x86_64
+          - os: windows-latest
+            bundles: nsis
+            artifact: launcher-windows-x86_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - run: npm ci
+      - name: Validate release version and signing key
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          VERSION=$(node -p 'JSON.parse(require("fs").readFileSync("package.json")).version')
+          test "$TAG" = "v$VERSION" || { echo "Tag must be v$VERSION; update package.json, Cargo.toml and tauri.conf.json before tagging."; exit 1; }
+          node -e 'const fs=require("fs"), version=JSON.parse(fs.readFileSync("package.json")).version; if(JSON.parse(fs.readFileSync("src-tauri/tauri.conf.json")).version!==version || !fs.readFileSync("src-tauri/Cargo.toml","utf8").includes(`version = "${version}"`)) process.exit(1)'
+          test -n "$TAURI_SIGNING_PRIVATE_KEY" || { echo 'Set TAURI_SIGNING_PRIVATE_KEY for signed launcher updates.'; exit 1; }
+      - name: Build untagged desktop app
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        run: npm run tauri -- build --ci --bundles ${{ matrix.bundles }} --config '{"bundle":{"createUpdaterArtifacts":false}}'
+      - name: Publish signed release and updater manifest
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: NoveraMP Launcher ${{ github.ref_name }}
+          releaseBody: "Лаунчер NoveraMP для Windows и Linux. Игровые ресурсы устанавливаются отдельно."
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+          args: --ci --bundles ${{ matrix.bundles }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            target/release/bundle/**/*.deb
+            target/release/bundle/**/*.AppImage
+            target/release/bundle/**/*.exe
+            target/release/bundle/**/*.sig
+          if-no-files-found: error
