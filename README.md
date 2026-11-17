@@ -128,3 +128,8 @@ git push origin v0.1.0
 
 Шрифты Golos Text и JetBrains Mono взяты из предоставленного макета и
 поставляются с исходной SIL OFL в `public/fonts/LICENSE.txt`.
+
+Иконка NoveraMP предоставлена пользователем. Оригинал — `artwork/icon-source.png`,
+PNG/ICO для приложения и установщиков — `src-tauri/icons/`, значки интерфейса —
+`public/brand/` и `public/favicon.png`. Варианты подготовлены командой Tauri `icon`
+с сохранением прозрачности; изображение не перерисовывалось.
